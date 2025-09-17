@@ -1460,6 +1460,8 @@ if (audioStreamRef.current) {
             employeeLoading={employeeLoading}
             employeeError={employeeError}
             onEmployeeSelect={handleEmployeeSelect}
+            articles={knowledgeArticles}
+            onCopyLink={handleCopyLink}
             riskLevel={currentRiskLevel}
             riskLabel={callCompleted ? "Overall Risk" : "Risk Level"}
             customerTone={customerTone}
