@@ -1,5 +1,4 @@
 import React from 'react';
-import KnowledgeBasePanel from '@/components/dashboard/KnowledgeBasePanel';
 import VoiceAnalysisGraphs from '@/components/dashboard/VoiceAnalysisGraphs';
 import TimeAnalysis from '@/components/dashboard/TimeAnalysis';
 
@@ -44,8 +43,8 @@ const MiddleColumn: React.FC<MiddleColumnProps & { articles?: any[]; onCopyLink?
   isMuted = false,
   pendingTickets = [],
   selectedTicket,
-  articles = [],
-  onCopyLink = () => {}
+  articles = [], // Keep for compatibility but don't use
+  onCopyLink = () => {} // Keep for compatibility but don't use
 }) => {
   // Ensure status is a valid value for CallSummary component
   const getValidStatus = (status: string): 'Resolved' | 'In Progress' | 'Requires Escalation' => {
@@ -94,14 +93,16 @@ const MiddleColumn: React.FC<MiddleColumnProps & { articles?: any[]; onCopyLink?
         />
       </div>
 
- {/* Knowledge Base Panel - Ensure proper height constraint */}
-<div className="flex-1 min-h-0 overflow-hidden">
-  <KnowledgeBasePanel 
-    articles={articles}
-    onCopyLink={onCopyLink}
-  />
-</div>
-
+      {/* Additional content can be added here if needed */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {/* This space is now available for other components */}
+        <div className="bg-white rounded-md border border-gray-200 p-4 h-full flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <div className="text-gray-400 mb-2">📊</div>
+            <p>Additional analytics or content can be added here</p>
+          </div>
+        </div>
+      </div>
 
       {/* Ticket Information Module */}
       {/* <TicketInformation ticket={selectedTicket} /> */}

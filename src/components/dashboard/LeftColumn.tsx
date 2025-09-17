@@ -53,6 +53,13 @@ interface LeftColumnProps {
   employeeLoading?: boolean;
   employeeError?: string | null;
   onEmployeeSelect?: (employee: { email: string; employee_number: string; name: string }) => void;
+  articles?: Array<{
+    id: number;
+    title: string;
+    content: string;
+    category: string;
+  }>;
+  onCopyLink?: (id: number) => void;
 }
 
 const LeftColumn: React.FC<LeftColumnProps & {
@@ -80,6 +87,8 @@ const LeftColumn: React.FC<LeftColumnProps & {
   employeeLoading,
   employeeError,
   onEmployeeSelect,
+  articles = [],
+  onCopyLink = () => {},
   riskLevel,
   riskLabel = "Risk Level",
   customerTone,
@@ -109,6 +118,8 @@ const LeftColumn: React.FC<LeftColumnProps & {
           onSelectTicket={onSelectTicket}
           selectedTicketId={selectedTicketId}
           onSelectKbArticles={onSelectKbArticles}
+          articles={articles}
+          onCopyLink={onCopyLink}
         />
         <div className="mt-2">
           <RiskPanel

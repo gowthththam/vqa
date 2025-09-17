@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { FileText, X } from "lucide-react";
 
 interface Ticket {
   category: string;
@@ -17,6 +18,13 @@ interface PendingTicketsProps {
   onSelectTicket?: (ticket: Ticket | null) => void;
   selectedTicketId?: string | null;
   onSelectKbArticles?: (ticket: Ticket) => void;
+  articles?: Array<{
+    id: number;
+    title: string;
+    content: string;
+    category: string;
+  }>;
+  onCopyLink?: (id: number) => void;
 }
 
 const PendingTickets: React.FC<PendingTicketsProps> = ({
@@ -25,11 +33,15 @@ const PendingTickets: React.FC<PendingTicketsProps> = ({
   error = null,
   onSelectTicket,
   selectedTicketId,
-  onSelectKbArticles
+  onSelectKbArticles,
+  articles = [],
+  onCopyLink = () => {}
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showKbPopup, setShowKbPopup] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
 
   // Filter tickets based on search term
   const filteredTickets = useMemo(() => {
@@ -56,6 +68,75 @@ const PendingTickets: React.FC<PendingTicketsProps> = ({
     }, 5000);
   };
 
+  // Format content into React components (same as KnowledgeBasePanel)
+  const formatContentAsReact = (content: string) => {
+    if (!content) return [];
+    
+    const elements = [];
+    let elementKey = 0;
+    
+    const stepSplitRegex = /(\d+\.\s)/;
+    const parts = content.split(stepSplitRegex);
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (!part || !part.trim()) continue;
+      
+      if (stepSplitRegex.test(part)) {
+        const stepNumber = part;
+        const stepContent = parts[i + 1] || '';
+        
+        if (stepContent.trim()) {
+          elements.push(
+            <div key={`step-${elementKey++}`} className="mb-3">
+              <div className="font-bold text-blue-800 bg-blue-50 px-3 py-2 rounded-md border-l-4 border-blue-400">
+                <span className="text-blue-600">{stepNumber}</span>
+                {stepContent.trim()}
+              </div>
+            </div>
+          );
+          i++;
+        }
+      } else {
+        const sentences = part.split(/\.\s+/).filter(s => s.trim());
+        
+        sentences.forEach((sentence) => {
+          const trimmedSentence = sentence.trim();
+          if (!trimmedSentence) return;
+          
+          if (
+            trimmedSentence.toLowerCase().includes('once verification') ||
+            trimmedSentence.toLowerCase().includes('once active directory') ||
+            trimmedSentence.toLowerCase().includes('password reset is done')
+          ) {
+            elements.push(
+              <div key={`highlight-${elementKey++}`} className="bg-yellow-50 border-l-4 border-yellow-400 px-3 py-2 mb-3">
+                <p className="font-semibold text-yellow-800">
+                  {trimmedSentence}.
+                </p>
+              </div>
+            );
+          } else if (trimmedSentence.length > 10) {
+            elements.push(
+              <p key={`para-${elementKey++}`} className="mb-2 text-gray-700 leading-relaxed text-sm">
+                {trimmedSentence}.
+              </p>
+            );
+          }
+        });
+      }
+    }
+    
+    if (elements.length === 0) {
+      elements.push(
+        <p key="fallback" className="text-gray-700 text-sm leading-relaxed">
+          {content}
+        </p>
+      );
+    }
+    
+    return elements;
+  };
   // Clear search when collapsed
   const handleCollapse = (newCollapsed: boolean) => {
     setCollapsed(newCollapsed);
@@ -66,7 +147,8 @@ const PendingTickets: React.FC<PendingTicketsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-md transition-all duration-300">
+    <>
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-md transition-all duration-300">
       <div className="flex items-center justify-between mb-4 cursor-pointer select-none" onClick={() => handleCollapse(!collapsed)}>
         <h3 className="font-medium text-base mb-0">Open Tickets</h3>
         <div className="flex items-center">
@@ -93,6 +175,24 @@ const PendingTickets: React.FC<PendingTicketsProps> = ({
           </span>
         </div>
       </div>
+      
+      {/* Knowledge Base Section */}
+      {!collapsed && articles.length > 0 && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-800">KB Articles</span>
+            </div>
+            <button
+              onClick={() => setShowKbPopup(true)}
+              className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-bold hover:bg-blue-700 transition-colors"
+            >
+              {articles.length}
+            </button>
+          </div>
+        </div>
+      )}
       
       {collapsed ? null : (
         <>
@@ -250,7 +350,82 @@ const PendingTickets: React.FC<PendingTicketsProps> = ({
           )}
         </>
       )}
-    </div>
+      </div>
+
+      {/* KB Articles List Popup */}
+      {showKbPopup && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Knowledge Base Articles</h3>
+              <button
+                onClick={() => setShowKbPopup(false)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-2">
+                {articles.map((article) => (
+                  <div
+                    key={article.id}
+                    onClick={() => {
+                      setSelectedArticle(article);
+                      setShowKbPopup(false);
+                    }}
+                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-sm font-medium text-gray-800 flex-1">{article.title}</h4>
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium ml-2">
+                        {article.category}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Article Content Popup */}
+      {selectedArticle && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">{selectedArticle.title}</h2>
+                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium mt-2 inline-block">
+                  {selectedArticle.category}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedArticle(null)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-2">
+                {formatContentAsReact(selectedArticle.content)}
+              </div>
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <button 
+                  className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
+                  onClick={() => onCopyLink(selectedArticle.id)}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Copy Link
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
